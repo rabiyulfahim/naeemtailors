@@ -1,5 +1,5 @@
 # naeemtailors
 #my first website
-references - https://pages.github.com/
+#references - https://pages.github.com/
 
-my first website - https://rabiyulfahim.github.io/naeemtailors/#about
+#my first website - https://rabiyulfahim.github.io/naeemtailors/#about
