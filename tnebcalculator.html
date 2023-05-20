@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="google-site-verification" content="vRfmTqhVn-CcFFETvd17F9WhH3TSbEizHc2djDTEOq0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <noscript>
+        <h3> You must have JavaScript enabled in order to use this order form. Please
+            enable JavaScript and then reload this page in order to continue. </h3>
+        <meta HTTP-EQUIV="refresh" content=0;url="javascriptNotEnabled.php">
+    </noscript>
+    <title> TNEB Bill Calculator </title>
+
+    <script>
+
+        const iATariffSlabsForUpto500 = [
+            { from: 1, to: 100, pricePerUnit: 0 },
+            { from: 101, to: 200, pricePerUnit: 2.25 },
+            { from: 201, to: 400, pricePerUnit: 4.5 },
+            { from: 401, to: 500, pricePerUnit: 6 }
+        ]
+
+        const iATariffSlabsForAbove500 = [
+            { from: 1, to: 100, pricePerUnit: 0 },
+            { from: 101, to: 400, pricePerUnit: 4.5 },
+            { from: 401, to: 500, pricePerUnit: 6 },
+            { from: 501, to: 600, pricePerUnit: 8 },
+            { from: 601, to: 800, pricePerUnit: 9 },
+            { from: 801, to: 1000, pricePerUnit: 10 },
+            { from: 1001, pricePerUnit: 11 }
+        ]
+
+        function iATariffSlabs(unitsConsumed) {
+            return unitsConsumed > 500 ? iATariffSlabsForAbove500 : iATariffSlabsForUpto500
+        }
+
+        function valuesOfRange({ from, to }) {
+            return to - (from - 1);
+        }
+
+        function valuesOfRangeUpto({ from }, x) {
+            return x - (from - 1);
+        }
+
+        function isAboveRange({ to }, x) {
+            return to && x > to
+        }
+
+        function consumedValuesOfRange(range, consumedValue) {
+            if (consumedValue < range.from) {
+                return 0;
+            }
+            return isAboveRange(range, consumedValue) ? valuesOfRange(range) : valuesOfRangeUpto(range, consumedValue)
+        }
+
+        function slabsConsumption(slabs, unitsConsumed) {
+            return slabs.map(slab => {
+                let unitsConsumedInSlab = consumedValuesOfRange(slab, unitsConsumed);
+                let amount = unitsConsumedInSlab * slab.pricePerUnit;
+                let isUsed = unitsConsumedInSlab > 0;
+                return { ...slab, amount, unitsConsumedInSlab, isUsed }
+            });
+        }
+
+        function totalAmountOfSlabsConsumption(slabsConsumed) {
+            return slabsConsumed.reduce((x, slabConsumed) => x + slabConsumed.amount, 0)
+        }
+
+        function calculateBill(unitsConsumed) {
+            let slabs = iATariffSlabs(unitsConsumed)
+            let slabsConsumed = slabsConsumption(slabs, unitsConsumed)
+            let totalAmount = totalAmountOfSlabsConsumption(slabsConsumed)
+            return { totalAmount, slabsConsumed }
+        }
+
+        function renderBillBreakdown(unitsConsumed, { totalAmount, slabsConsumed }) {
+            let slabsBreakdownHtml = 
+                slabsConsumed
+                    .filter(consumedSlab => consumedSlab.isUsed)
+                    .map(({from, to, amount}) => 
+                            `<tr><td>${from} - ${to || unitsConsumed}</td><td>${amount}</td></tr>`)
+            return `<table>
+                        <tr>
+                        <th>Consumed Units</th>
+                        <th>${unitsConsumed}</th>
+                        </tr>
+                        ${slabsBreakdownHtml}
+                        <tr>
+                        <td>Total</td>
+                        <td>${totalAmount}</td>
+                        </tr>
+                    </table>`
+        }
+        
+        function onCalculateSubmit() {
+            // Input
+            let unitsConsumed = parseInt(document.getElementById("calc").value)
+            
+            // Business Logic
+            let billCalculated = calculateBill(unitsConsumed)
+
+            // Output
+            document.getElementById("table").innerHTML = renderBillBreakdown(unitsConsumed, billCalculated)
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            return false;
+        }
+        
+        function dis(val) {
+            var amount = document.getElementById("calc").value;
+            if (amount.includes(".") && val == ".") {
+                return
+            }
+            if (amount.charAt(0) == "A") {
+                clr();
+                document.getElementById("calc").value += val;
+            }
+            else if (amount.length > 5) {
+                return
+            }
+            else {
+                document.getElementById("calc").value += val
+            }
+        }
+
+        
+
+        function clr() {
+            document.getElementById("calc").value = ""
+        }
+
+    </script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            padding-bottom: 10px !important;
+            padding: 23px;
+            background-color: lightsteelblue;
+            color: white;
+            margin-bottom: 0;
+        }
+
+        p {
+            margin-top: 0;
+            text-align: center;
+            padding-top: 0 !important;
+            padding: 15px;
+            background-color: lightsteelblue;
+            color: white;
+        }
+
+        table,
+        td,
+        th {
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        table {
+            /* border-collapse: collapse; */
+            width: 300px;
+            overflow-x: scroll;
+            margin: auto;
+            background: #eeeeee;
+            border-collapse: collapse;
+            font-weight: bold;
+        }
+
+        table td:first-child {
+            color: #0033ff;
+        }
+
+        table td:last-child {
+            color: #cc0000;
+        }
+
+        th,
+        td {
+            padding: 8px;
+        }
+
+        th {
+            font-size: 20px;
+        }
+
+        td {
+            font-size: 18px;
+        }
+
+        #table {
+            margin: 20px 0 80px 0;
+        }
+
+        #calculate {
+            width: 285px;
+            border: 3px solid blueviolet;
+            margin-top: 20px;
+            border-radius: 3px;
+            padding: 20px;
+            background-color: lightsteelblue;
+        }
+
+        .formstyle {
+            width: 300px;
+            height: 515px;
+            margin: auto;
+            border: 3px solid blue;
+            border-radius: 5px;
+            padding: 20px;
+        }
+
+
+
+        input {
+            width: 20px;
+            background-color: lightsteelblue;
+            color: white;
+            border: 3px solid blueviolet;
+            border-radius: 5px;
+            padding: 20px 40px;
+            margin: 5px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+
+        #calc {
+            width: 245px;
+            height: 60px;
+            border: 5px solid blueviolet;
+            border-radius: 3px;
+            padding: 20px;
+            margin: auto;
+            font-size: 35px;
+            text-align: right;
+            cursor: auto;
+        }
+
+        .footer {
+            text-align: center;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            background-color: grey;
+            color: white;
+            padding: 8px;
+        }
+
+        .fa {
+            padding: 5px;
+            font-size: 20px;
+            width: 30px;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .fa-envelope {
+            background: #dd4b39;
+            color: white;
+        }
+
+        .fa-linkedin {
+            background: #007bb5;
+            color: white;
+        }
+
+        .fa-facebook {
+            background: #3B5998;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <h1> TNEB Bill Calculator</h1>
+    <p>(As per revised tariff on 10.09.2022)</p>
+    <div class="formstyle">
+        <form name="form1" onsubmit="return onCalculateSubmit();">
+            <input id="calc" type="number" name="answer" id="answer">
+            <br><br>
+
+            <input type="button" value="1" onclick="dis('1')">
+            <input type="button" value="2" onclick="dis('2')">
+            <input type="button" value="3" onclick="dis('3')">
+            <br>
+
+            <input type="button" value="4" onclick="dis('4')">
+            <input type="button" value="5" onclick="dis('5')">
+            <input type="button" value="6" onclick="dis('6')">
+            <br>
+
+            <input type="button" value="7" onclick="dis('7')">
+            <input type="button" value="8" onclick="dis('8')">
+            <input type="button" value="9" onclick="dis('9')">
+            <br>
+
+
+            <input type="button" value="." onclick="dis('.')">
+            <input type="button" value="0" onclick="dis('0')">
+            <input type="button" value="C" onclick="clr()">
+            <br>
+
+            <input type="submit" value="Calculate" id="calculate">
+            <br>
+        </form>
+    </div>
+
+    <div id="table"></div>
+
+    <div class="footer" id="footer">
+        <span><span style="font-size: 12px;"></span> <a href="https://github.com/rabiyulfahimhasim786/" target="_blank"
+        style="color: white">Rabiyul </a> | Reach me at  </a> 
+        <a href="https://www.linkedin.com/in/rabiyul-fahim-0b9981155/" target="_blank" class="fa fa-linkedin"></a></span>
+    </div>
+
+    <script>
+        if (screen.width < 600) {
+            document.getElementById("laptopscreen").style.display = "none";
+        }
+        else {
+            document.getElementById("phonescreen").style.display = "none";
+        }
+    </script>
+
+</body>
+
+</html>
